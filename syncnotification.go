@@ -4,7 +4,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/planetdecred/dcrlibwallet/spv"
+	"github.com/Decred-Next/dcrnlibwallet/spv"
 	"golang.org/x/sync/errgroup"
 )
 

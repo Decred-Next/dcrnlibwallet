@@ -17,8 +17,8 @@ import (
 	"github.com/decred/dcrwallet/wallet/v3/udb"
 	"github.com/decred/slog"
 	"github.com/jrick/logrotate/rotator"
-	"github.com/planetdecred/dcrlibwallet/internal/loader"
-	"github.com/planetdecred/dcrlibwallet/spv"
+	"github.com/Decred-Next/dcrnlibwallet/internal/loader"
+	"github.com/Decred-Next/dcrnlibwallet/spv"
 )
 
 // logWriter implements an io.Writer that outputs to both standard output and

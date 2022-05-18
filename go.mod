@@ -1,4 +1,4 @@
-module github.com/planetdecred/dcrlibwallet
+module github.com/Decred-Next/dcrnlibwallet
 
 require (
 	github.com/AndreasBriese/bbloom v0.0.0-20190306092124-e2d15f34fcf9 // indirect
@@ -10,7 +10,7 @@ require (
 	github.com/decred/dcrd/chaincfg v1.5.2 // indirect
 	github.com/decred/dcrd/chaincfg/chainhash v1.0.2
 	github.com/decred/dcrd/chaincfg/v2 v2.3.0
-	github.com/decred/dcrd/connmgr/v2 v2.0.0
+	github.com/decred/dcrd/connmgr/v2 v2.1.0
 	github.com/decred/dcrd/dcrec v1.0.0
 	github.com/decred/dcrd/dcrutil/v2 v2.0.1
 	github.com/decred/dcrd/hdkeychain/v2 v2.1.0
@@ -34,7 +34,7 @@ require (
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/pkg/errors v0.8.1 // indirect
-	github.com/planetdecred/dcrlibwallet/spv v0.0.0-00010101000000-000000000000
+	github.com/Decred-Next/dcrnlibwallet/spv v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.3.0 // indirect
 	go.etcd.io/bbolt v1.3.3
 	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550
@@ -44,9 +44,11 @@ require (
 )
 
 replace (
+	github.com/Decred-Next/dcrnlibwallet/spv => ./spv
 	decred.org/dcrwallet => decred.org/dcrwallet v1.2.3-0.20191024200307-d273b5687adf
 	github.com/decred/dcrwallet/wallet/v3 => github.com/raedahgroup/dcrwallet/wallet/v3 v3.2.1-badger
-	github.com/planetdecred/dcrlibwallet/spv => ./spv
+	github.com/decred/dcrd/chaincfg/v2 v2.3.0 => /home/dcrn-core/workspace/dcrnd/chaincfg
+	github.com/decred/dcrd/wire v1.3.0 => /home/dcrn-core/workspace/dcrnd/wire
 )
 
 go 1.13

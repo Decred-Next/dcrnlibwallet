@@ -10,7 +10,7 @@ import (
 	w "github.com/decred/dcrwallet/wallet/v3"
 	"github.com/kevinburke/nacl"
 	"github.com/kevinburke/nacl/secretbox"
-	"github.com/planetdecred/dcrlibwallet/spv"
+	"github.com/Decred-Next/dcrnlibwallet/spv"
 	"golang.org/x/crypto/scrypt"
 )
 

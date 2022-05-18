@@ -1,4 +1,4 @@
-module github.com/planetdecred/dcrlibwallet/spv
+module github.com/Decred-Next/dcrnlibwallet/spv
 
 go 1.12
 

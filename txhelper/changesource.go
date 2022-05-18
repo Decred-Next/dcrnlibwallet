@@ -2,7 +2,7 @@ package txhelper
 
 import (
 	"github.com/decred/dcrd/dcrutil/v2"
-	"github.com/planetdecred/dcrlibwallet/addresshelper"
+	"github.com/Decred-Next/dcrnlibwallet/addresshelper"
 )
 
 const scriptVersion = 0
