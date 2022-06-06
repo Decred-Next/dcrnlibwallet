@@ -1,6 +1,7 @@
 package dcrlibwallet
 
 import "github.com/decred/dcrwallet/wallet/v3"
+import "encoding/json"
 
 type WalletsIterator struct {
 	currentIndex int
@@ -61,6 +62,17 @@ type Accounts struct {
 	Acc                []*Account
 	CurrentBlockHash   []byte
 	CurrentBlockHeight int32
+}
+
+type PeerInfo struct {
+	ID             int32  `json:"id"`
+	Addr           string `json:"addr"`
+	AddrLocal      string `json:"addr_local"`
+	Services       string `json:"services"`
+	Version        uint32 `json:"version"`
+	SubVer         string `json:"sub_ver"`
+	StartingHeight int64  `json:"starting_height"`
+	BanScore       int32  `json:"ban_score"`
 }
 
 /** begin sync-related types */
@@ -322,3 +334,86 @@ type UnspentOutput struct {
 	Addresses       string // separated by commas
 	Confirmations   int32
 }
+
+/** end politea proposal types */
+
+/** begin vspd-related types */
+type GetVspInfoResponse struct {
+	APIVersions   []int64 `json:"apiversions"`
+	Timestamp     int64   `json:"timestamp"`
+	PubKey        []byte  `json:"pubkey"`
+	FeePercentage float64 `json:"feepercentage"`
+	VspClosed     bool    `json:"vspclosed"`
+	Network       string  `json:"network"`
+	VspdVersion   string  `json:"vspdversion"`
+	Voting        int64   `json:"voting"`
+	Voted         int64   `json:"voted"`
+	Revoked       int64   `json:"revoked"`
+}
+
+type GetFeeAddressRequest struct {
+	Timestamp  int64  `json:"timestamp" binding:"required"`
+	TicketHash string `json:"tickethash" binding:"required"`
+	TicketHex  string `json:"tickethex" binding:"required"`
+	ParentHex  string `json:"parenthex" binding:"required"`
+}
+
+type GetFeeAddressResponse struct {
+	Timestamp  int64           `json:"timestamp"`
+	FeeAddress string          `json:"feeaddress"`
+	FeeAmount  int64           `json:"feeamount"`
+	Expiration int64           `json:"expiration"`
+	Request    json.RawMessage `json:"request"`
+}
+
+type PayFeeRequest struct {
+	Timestamp   int64             `json:"timestamp" binding:"required"`
+	TicketHash  string            `json:"tickethash" binding:"required"`
+	FeeTx       string            `json:"feetx" binding:"required"`
+	VotingKey   string            `json:"votingkey" binding:"required"`
+	VoteChoices map[string]string `json:"votechoices" binding:"required"`
+}
+
+type PayFeeResponse struct {
+	Timestamp int64           `json:"timestamp"`
+	Request   json.RawMessage `json:"request"`
+}
+
+type TicketStatusRequest struct {
+	TicketHash string `json:"tickethash" binding:"required"`
+}
+
+type TicketStatusResponse struct {
+	Timestamp       int64             `json:"timestamp"`
+	TicketConfirmed bool              `json:"ticketconfirmed"`
+	FeeTxStatus     string            `json:"feetxstatus"`
+	FeeTxHash       string            `json:"feetxhash"`
+	VoteChoices     map[string]string `json:"votechoices"`
+	Request         json.RawMessage   `json:"request"`
+}
+
+type SetVoteChoicesRequest struct {
+	Timestamp   int64             `json:"timestamp" binding:"required"`
+	TicketHash  string            `json:"tickethash" binding:"required"`
+	VoteChoices map[string]string `json:"votechoices" binding:"required"`
+}
+
+type SetVoteChoicesResponse struct {
+	Timestamp int64           `json:"timestamp"`
+	Request   json.RawMessage `json:"request"`
+}
+
+type VspdTicketInfo struct {
+	Hash            string            `storm:"id,unique" json:"tickethash"`
+	FeeAddress      string            `json:"feeaddress"`
+	FeeAmount       int64             `json:"feeamount"`
+	Expiration      int64             `json:"expiration"`
+	Timestamp       int64             `json:"timestamp"`
+	FeeTx           string            `json:"feetx"`
+	FeeTxHash       string            `json:"feetxhash"`
+	FeeTxStatus     string            `json:"feetxstatus"`
+	VoteChoices     map[string]string `json:"votechoices"`
+	TicketConfirmed bool              `json:"ticketconfirmed"`
+}
+
+/** end vspd-related types */

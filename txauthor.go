@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Decred-Next/dcrnlibwallet/txhelper"
 	"github.com/decred/dcrd/chaincfg/chainhash"
 	"github.com/decred/dcrd/dcrutil/v2"
 	"github.com/decred/dcrd/txscript/v2"
@@ -16,7 +17,6 @@ import (
 	w "github.com/decred/dcrwallet/wallet/v3"
 	"github.com/decred/dcrwallet/wallet/v3/txauthor"
 	"github.com/decred/dcrwallet/wallet/v3/txrules"
-	"github.com/Decred-Next/dcrnlibwallet/txhelper"
 )
 
 type TxAuthor struct {

@@ -1,9 +1,9 @@
-package txindex
+package walletdata
 
 import (
+	"github.com/Decred-Next/dcrnlibwallet/txhelper"
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
-	"github.com/Decred-Next/dcrnlibwallet/txhelper"
 )
 
 const (
@@ -40,37 +40,37 @@ func TxMatchesFilter(txType string, txDirection, txFilter int32) bool {
 func (db *DB) prepareTxQuery(txFilter int32) (query storm.Query) {
 	switch txFilter {
 	case TxFilterSent:
-		query = db.txDB.Select(
+		query = db.walletDataDB.Select(
 			q.Eq("Type", txhelper.TxTypeRegular),
 			q.Eq("Direction", txhelper.TxDirectionSent),
 		)
 	case TxFilterReceived:
-		query = db.txDB.Select(
+		query = db.walletDataDB.Select(
 			q.Eq("Type", txhelper.TxTypeRegular),
 			q.Eq("Direction", txhelper.TxDirectionReceived),
 		)
 	case TxFilterTransferred:
-		query = db.txDB.Select(
+		query = db.walletDataDB.Select(
 			q.Eq("Type", txhelper.TxTypeRegular),
 			q.Eq("Direction", txhelper.TxDirectionTransferred),
 		)
 	case TxFilterStaking:
-		query = db.txDB.Select(
+		query = db.walletDataDB.Select(
 			q.Not(
 				q.Eq("Type", txhelper.TxTypeRegular),
 				q.Eq("Type", txhelper.TxTypeCoinBase),
 			),
 		)
 	case TxFilterCoinBase:
-		query = db.txDB.Select(
+		query = db.walletDataDB.Select(
 			q.Eq("Type", txhelper.TxTypeCoinBase),
 		)
 	case TxFilterRegular:
-		query = db.txDB.Select(
+		query = db.walletDataDB.Select(
 			q.Eq("Type", txhelper.TxTypeRegular),
 		)
 	default:
-		query = db.txDB.Select(
+		query = db.walletDataDB.Select(
 			q.True(),
 		)
 	}

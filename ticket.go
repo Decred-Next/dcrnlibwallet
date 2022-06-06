@@ -1,7 +1,6 @@
 package dcrlibwallet
 
 import (
-	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -107,15 +106,16 @@ func (wallet *Wallet) getTickets(req *GetTicketsRequest) (ticketInfos []*TicketI
 			// t.Spender and t.Spender.Hash are pointers, avoid using them directly
 			// as they could be re-used to hold information for some other ticket.
 			// See the doc on `wallet.GetTickets`.
-			spenderHash, _ := chainhash.NewHash(t.Spender.Hash[:])
-			spender := &w.TransactionSummary{
-				Hash:        spenderHash,
-				Transaction: t.Spender.Transaction,
-				MyInputs:    t.Spender.MyInputs,
-				MyOutputs:   t.Spender.MyOutputs,
-				Fee:         t.Spender.Fee,
-				Timestamp:   t.Spender.Timestamp,
-				Type:        t.Spender.Type,
+			spender := &w.TransactionSummary{}
+			if t.Spender != nil {
+				spenderHash, _ := chainhash.NewHash(t.Spender.Hash[:])
+				spender.Hash = spenderHash
+				spender.Transaction = t.Spender.Transaction
+				spender.MyInputs = t.Spender.MyInputs
+				spender.MyOutputs = t.Spender.MyOutputs
+				spender.Fee = t.Spender.Fee
+				spender.Timestamp = t.Spender.Timestamp
+				spender.Type = t.Spender.Type
 			}
 
 			ticketInfos = append(ticketInfos, &TicketInfo{
@@ -148,7 +148,8 @@ func (wallet *Wallet) getTickets(req *GetTicketsRequest) (ticketInfos []*TicketI
 
 // TicketPrice returns the price of a ticket for the next block, also known as the stake difficulty.
 // May be incorrect if blockchain sync is ongoing or if blockchain is not up-to-date.
-func (wallet *Wallet) TicketPrice(ctx context.Context) (*TicketPriceResponse, error) {
+func (wallet *Wallet) TicketPrice() (*TicketPriceResponse, error) {
+	ctx := wallet.shutdownContext()
 	sdiff, err := wallet.internal.NextStakeDifficulty(ctx)
 	if err == nil {
 		_, tipHeight := wallet.internal.MainChainTip(ctx)
@@ -177,12 +178,12 @@ func (wallet *Wallet) TicketPrice(ctx context.Context) (*TicketPriceResponse, er
 }
 
 // PurchaseTickets purchases tickets from the wallet. Returns a slice of hashes for tickets purchased
-func (wallet *Wallet) PurchaseTickets(ctx context.Context, request *PurchaseTicketsRequest, vspHost string) ([]string, error) {
+func (wallet *Wallet) PurchaseTickets(request *PurchaseTicketsRequest, vspHost, apiKey string) ([]string, error) {
 	var err error
 
 	// fetch redeem script, ticket address, pool address and pool fee if vsp host isn't empty
 	if vspHost != "" {
-		if err = wallet.updateTicketPurchaseRequestWithVSPInfo(vspHost, request); err != nil {
+		if err = wallet.updateTicketPurchaseRequestWithVSPInfo(vspHost, apiKey, request); err != nil {
 			return nil, err
 		}
 	}
@@ -240,7 +241,7 @@ func (wallet *Wallet) PurchaseTickets(ctx context.Context, request *PurchaseTick
 	defer func() {
 		lock <- time.Time{} // send matters, not the value
 	}()
-	err = wallet.internal.Unlock(ctx, request.Passphrase, lock)
+	err = wallet.internal.Unlock(wallet.shutdownContext(), request.Passphrase, lock)
 	if err != nil {
 		return nil, translateError(err)
 	}
@@ -251,14 +252,21 @@ func (wallet *Wallet) PurchaseTickets(ctx context.Context, request *PurchaseTick
 		VotingAddress: ticketAddr,
 		MinConf:       minConf,
 		Expiry:        expiry,
+		//VSPFees: request.PoolFees,
+		VSPAddress: poolAddr,
+		VSPFees:    request.PoolFees,
+
+		//	minBalance: minBalance,
+		//	spendLimit: spendLimit,
+		//	txFee:      txFee,
+		//	ticketFee:  ticketFee,
 	}
 
 	netBackend, err := wallet.internal.NetworkBackend()
 	if err != nil {
 		return nil, err
 	}
-
-	purchasedTickets, err := wallet.internal.PurchaseTicketsContext(ctx, netBackend, purchaseTicketsRequest)
+	purchasedTickets, err := wallet.internal.PurchaseTicketsContext(wallet.shutdownContext(), netBackend, purchaseTicketsRequest)
 	if err != nil {
 		return nil, fmt.Errorf("unable to purchase tickets: %s", err.Error())
 	}
@@ -271,6 +279,7 @@ func (wallet *Wallet) PurchaseTickets(ctx context.Context, request *PurchaseTick
 	return hashes, nil
 }
 
+/*
 func (wallet *Wallet) updateTicketPurchaseRequestWithVSPInfo(vspHost string, request *PurchaseTicketsRequest) error {
 	// generate an address and get the pubkeyaddr
 	address, err := wallet.CurrentAddress(0)
@@ -311,6 +320,7 @@ func (wallet *Wallet) updateTicketPurchaseRequestWithVSPInfo(vspHost string, req
 
 	return nil
 }
+*/
 
 func CallVSPTicketInfoAPI(vspHost, pubKeyAddr string) (ticketPurchaseInfo *VSPTicketPurchaseInfo, err error) {
 	apiUrl := fmt.Sprintf("%s/api/v2/purchaseticket", strings.TrimSuffix(vspHost, "/"))
@@ -343,4 +353,114 @@ func CallVSPTicketInfoAPI(vspHost, pubKeyAddr string) (ticketPurchaseInfo *VSPTi
 		}
 	}
 	return
+}
+
+func (wallet *Wallet) registerPubKeyAddr(baseUrl, apiKey string, account int32) error {
+	// generate an address and get the pubkeyaddr
+	address, err := wallet.NextAddress(account)
+	if err != nil {
+		return fmt.Errorf("get wallet pubkeyaddr error: %s", err.Error())
+	}
+	pubKeyAddr, err := wallet.AddressPubKey(address)
+	if nil != err {
+		return err
+	}
+
+	//apiUrl =  `http://54.219.23.233:3000/api/v1/address`
+	data := url.Values{}
+	data.Set("UserPubKeyAddr", pubKeyAddr)
+	body := data.Encode()
+	req, err := http.NewRequest("POST", baseUrl+`address`, strings.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+
+	resp, err := new(http.Client).Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	apiResp := struct {
+		Code    int
+		Message string
+	}{}
+	err = json.NewDecoder(resp.Body).Decode(&apiResp)
+	if nil != err {
+		return err
+	}
+
+	if 0 != apiResp.Code {
+		return errors.New(apiResp.Message)
+	}
+	return nil
+}
+
+func (wallet *Wallet) updateTicketPurchaseRequestWithVSPInfo(baseUrl, apiKey string, request *PurchaseTicketsRequest) error {
+	apiResp := struct {
+		Status  string `json:"status"`
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+		Data    struct {
+			PoolAddress     string  `json:"PoolAddress"`
+			PoolFees        float64 `json:"PoolFees"`
+			Script          string  `json:"Script"`
+			TicketAddress   string  `json:"TicketAddress"`
+			VoteBits        int     `json:"VoteBits"`
+			VoteBitsVersion int     `json:"VoteBitsVersion"`
+		} `json:"data"`
+	}{}
+
+	for i := 0; i < 2; i++ {
+		req, err := http.NewRequest("GET", baseUrl+`getpurchaseinfo`, nil)
+		if err != nil {
+			return err
+		}
+
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+		resp, err := new(http.Client).Do(req)
+		if err != nil {
+			return err
+		}
+
+		defer resp.Body.Close()
+		err = json.NewDecoder(resp.Body).Decode(&apiResp)
+		if nil != err {
+			return err
+		}
+		//success
+		if 0 == apiResp.Code {
+			break
+		}
+
+		if 9 == apiResp.Code && 0 == i {
+			if err := wallet.registerPubKeyAddr(baseUrl, apiKey, int32(request.Account)); nil != err {
+				return err
+			}
+			continue
+		}
+		return errors.New(apiResp.Message)
+	}
+
+	// decode the redeem script gotten from vsp
+	rs, err := hex.DecodeString(apiResp.Data.Script)
+	if err != nil {
+		return fmt.Errorf("invalid vsp purchase ticket response: %s", err.Error())
+	}
+
+	ctx := wallet.shutdownContext()
+	// unlock wallet and import the decoded script
+	lock := make(chan time.Time, 1)
+	wallet.internal.Unlock(ctx, request.Passphrase, lock)
+	err = wallet.internal.ImportScript(ctx, rs)
+	lock <- time.Time{}
+	if err != nil && !errors.Is(errors.Exist, err) {
+		return fmt.Errorf("error importing vsp redeem script: %s", err.Error())
+	}
+
+	request.TicketAddress = apiResp.Data.TicketAddress
+	request.PoolAddress = apiResp.Data.PoolAddress
+	request.PoolFees = apiResp.Data.PoolFees
+	return nil
 }

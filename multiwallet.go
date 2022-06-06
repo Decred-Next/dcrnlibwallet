@@ -10,13 +10,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Decred-Next/dcrnlibwallet/utils"
+	"github.com/Decred-Next/dcrnlibwallet/walletdata"
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/decred/dcrd/chaincfg/v2"
 	"github.com/decred/dcrwallet/errors/v2"
 	w "github.com/decred/dcrwallet/wallet/v3"
-	"github.com/Decred-Next/dcrnlibwallet/txindex"
-	"github.com/Decred-Next/dcrnlibwallet/utils"
 	bolt "go.etcd.io/bbolt"
 
 	"golang.org/x/crypto/bcrypt"
@@ -350,8 +350,8 @@ func (mw *MultiWallet) LinkExistingWallet(walletName, walletDataDir, originalPub
 			return err
 		}
 
-		currentTxDbFilePath := filepath.Join(walletDataDir, txindex.DbName)
-		newTxDbFilePath := filepath.Join(wallet.dataDir, txindex.DbName)
+		currentTxDbFilePath := filepath.Join(walletDataDir, "tx.db")
+		newTxDbFilePath := filepath.Join(wallet.dataDir, walletdata.DbName)
 		if err := moveFile(currentTxDbFilePath, newTxDbFilePath); err != nil {
 			return err
 		}

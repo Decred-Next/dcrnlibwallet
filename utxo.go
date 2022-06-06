@@ -3,6 +3,7 @@ package dcrlibwallet
 import (
 	"fmt"
 
+	"github.com/Decred-Next/dcrnlibwallet/txhelper"
 	"github.com/decred/dcrd/chaincfg/v2"
 	"github.com/decred/dcrd/dcrutil/v2"
 	"github.com/decred/dcrd/txscript"
@@ -11,7 +12,6 @@ import (
 	"github.com/decred/dcrwallet/wallet/v3/txauthor"
 	"github.com/decred/dcrwallet/wallet/v3/txrules"
 	"github.com/decred/dcrwallet/wallet/v3/txsizes"
-	"github.com/planetdecred/dcrlibwallet/txhelper"
 )
 
 type nextAddressFunc func() (address string, err error)

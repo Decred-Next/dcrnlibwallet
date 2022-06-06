@@ -6,11 +6,11 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/Decred-Next/dcrnlibwallet/spv"
 	"github.com/decred/dcrd/addrmgr"
 	"github.com/decred/dcrwallet/errors/v2"
 	"github.com/decred/dcrwallet/p2p/v2"
 	w "github.com/decred/dcrwallet/wallet/v3"
-	"github.com/Decred-Next/dcrnlibwallet/spv"
 )
 
 // reading/writing of properties of this struct are protected by mutex.x
@@ -37,6 +37,8 @@ type syncData struct {
 
 // reading/writing of properties of this struct are protected by syncData.mu.
 type activeSyncData struct {
+	syncer *spv.Syncer
+
 	syncStage int32
 
 	headersFetchProgress     HeadersFetchProgressReport
@@ -232,6 +234,7 @@ func (mw *MultiWallet) SpvSync() error {
 	mw.syncData.syncing = true
 	mw.syncData.cancelSync = cancel
 	mw.syncData.syncCanceled = make(chan struct{})
+	mw.syncData.syncer = syncer
 	mw.syncData.mu.Unlock()
 
 	for _, listener := range mw.syncProgressListeners() {
@@ -364,6 +367,46 @@ func (mw *MultiWallet) ConnectedPeers() int32 {
 	return mw.syncData.connectedPeers
 }
 
+/*
+func (mw *MultiWallet) PeerInfoRaw() ([]PeerInfo, error) {
+	if !mw.IsConnectedToDecredNetwork() {
+		return nil, errors.New(ErrNotConnected)
+	}
+
+	syncer := mw.syncData.syncer
+
+	infos := make([]PeerInfo, 0, len(syncer.GetRemotePeers()))
+	for _, rp := range syncer.GetRemotePeers() {
+		info := PeerInfo{
+			ID:             int32(rp.ID()),
+			Addr:           rp.RemoteAddr().String(),
+			AddrLocal:      rp.LocalAddr().String(),
+			Services:       fmt.Sprintf("%08d", uint64(rp.Services())),
+			Version:        rp.Pver(),
+			SubVer:         rp.UA(),
+			StartingHeight: int64(rp.InitialHeight()),
+			BanScore:       int32(rp.BanScore()),
+		}
+
+		infos = append(infos, info)
+	}
+
+	sort.Slice(infos, func(i, j int) bool {
+		return infos[i].ID < infos[j].ID
+	})
+
+	return infos, nil
+}
+func (mw *MultiWallet) PeerInfo() (string, error) {
+	infos, err := mw.PeerInfoRaw()
+	if err != nil {
+		return "", err
+	}
+
+	result, _ := json.Marshal(infos)
+	return string(result), nil
+}
+*/
 func (mw *MultiWallet) GetBestBlock() *BlockInfo {
 	var bestBlock int32 = -1
 	var blockInfo *BlockInfo
